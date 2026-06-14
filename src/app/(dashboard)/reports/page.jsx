@@ -17,12 +17,54 @@ export default function ReportesPage() {
 
     const obtenerDatosReporte = async () => {
         try {
+            // 📊 1. Consultar el resumen general de ventas del mes
             const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/summary');
-            setMetricas(res.data.metricas);
-            setProductosMasVendidos(res.data.topProductos);
+            const datosApi = res.data;
+
+            // Extraemos los montos del mes de forma segura
+            const totalVentasMes = datosApi.ventas_mes?.monto || 0;
+            const transaccionesMes = datosApi.ventas_mes?.cantidad || 0;
+            
+            // Calculamos el ticket promedio (evitando división por cero)
+            const promedio = transaccionesMes > 0 ? Math.round(totalVentasMes / transaccionesMes) : 0;
+
+            // Guardamos el estado inicial con los KPIs de venta
+            setMetricas({
+                totalVentas: totalVentasMes,
+                cantidadTransacciones: transaccionesMes,
+                ticketPromedio: promedio,
+                productoEstrella: 'Sin datos'
+            });
+
+            // ⚡ 2. Consultar el ranking de productos más vendidos en paralelo
+            try {
+                const resTop = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/top-products?limit=5');
+                
+                // Mapeamos las llaves de la base de datos (unidades_vendidas, ingreso_total) al formato de la tabla
+                const topFormateado = resTop.data.map((prod, index) => ({
+                    id: index + 1,
+                    nombre: prod.nombre,
+                    cantidad: prod.unidades_vendidas,
+                    total: prod.ingreso_total
+                }));
+
+                setProductosMasVendidos(topFormateado);
+
+                // Si la base de datos arrojó un líder en ventas, actualizamos el KPI del Producto Estrella
+                if (topFormateado.length > 0) {
+                    setMetricas(prev => ({
+                        ...prev,
+                        productoEstrella: topFormateado[0].nombre
+                    }));
+                }
+            } catch (topError) {
+                console.error("Aviso: No se pudo procesar el ranking de productos aún:", topError);
+            }
+
         } catch (error) {
             console.error("Error al obtener reportes de Azure:", error);
-            // Simulación de datos KPI del negocio para poblar la vista en el Sprint
+            
+            // 🛡️ ZONA ANTI-CRASH: Datos de respaldo idénticos a tus pruebas iniciales
             setMetricas({
                 totalVentas: 458990,
                 cantidadTransacciones: 34,
@@ -58,7 +100,7 @@ export default function ReportesPage() {
 
             {/* Fila de Tarjetas Métricas (KPIs) */}
             <div className="row g-3 mb-4">
-                {/* KPI 1 */}
+                {/* KPI 1: Ingresos Totales */}
                 <div className="col-12 col-sm-6 col-xl-3">
                     <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
                         <div className="d-flex align-items-center justify-content-between">
@@ -73,7 +115,7 @@ export default function ReportesPage() {
                     </div>
                 </div>
 
-                {/* KPI 2 */}
+                {/* KPI 2: Cantidad Transacciones */}
                 <div className="col-12 col-sm-6 col-xl-3">
                     <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
                         <div className="d-flex align-items-center justify-content-between">
@@ -88,7 +130,7 @@ export default function ReportesPage() {
                     </div>
                 </div>
 
-                {/* KPI 3 */}
+                {/* KPI 3: Ticket Promedio */}
                 <div className="col-12 col-sm-6 col-xl-3">
                     <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
                         <div className="d-flex align-items-center justify-content-between">
@@ -103,7 +145,7 @@ export default function ReportesPage() {
                     </div>
                 </div>
 
-                {/* KPI 4 */}
+                {/* KPI 4: Producto Estrella */}
                 <div className="col-12 col-sm-6 col-xl-3">
                     <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
                         <div className="d-flex align-items-center justify-content-between">
@@ -139,7 +181,7 @@ export default function ReportesPage() {
                         </thead>
                         <tbody>
                             {productosMasVendidos.map((prod, index) => (
-                                <tr key={prod.id}>
+                                <tr key={prod.id || index}>
                                     <td className="text-center fw-bold text-secondary">#{index + 1}</td>
                                     <td>
                                         <span className="fw-semibold text-dark">{prod.nombre}</span>
@@ -148,6 +190,14 @@ export default function ReportesPage() {
                                     <td className="text-end pe-4 fw-bold text-success">{formatearMoneda(prod.total)}</td>
                                 </tr>
                             ))}
+                            {productosMasVendidos.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" className="text-center text-muted py-4">
+                                        No se registran datos de ventas procesadas para estructurar el ranking.
+                                    </td>
+                                end
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
