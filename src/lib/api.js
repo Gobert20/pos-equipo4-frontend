@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api', 
+    // 🚀 ¡CONECTADO A LA NUBE! Apuntamos directamente a Render
+    baseURL: 'https://pos-equipo4-backend.onrender.com/api', 
     timeout: 8000, // Si el backend no responde en 8 segundos, corta la petición
-    withCredentials: true, // 👈 ¡SOLUCIÓN DEFINITIVA! Permite que viajen las cookies HttpOnly entre Next.js y el Backend
+    withCredentials: true, // Permite que viajen las cookies HttpOnly entre Next.js y el Backend
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
