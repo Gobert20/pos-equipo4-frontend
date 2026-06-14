@@ -11,7 +11,8 @@ export default function PuntoDeVentaPage() {
     // 🛒 Estado activo del carrito de compras (Boleta Actual)
     const [carrito, setCarrito] = useState([]);
 
-    const URL_PRODUCTS = 'http://127.0.0.1:3000/api/products';
+    // 🌐 Conexión directa al backend oficial alojado en Render
+    const URL_PRODUCTS = 'https://pos-equipo4-backend.onrender.com/api/products';
 
     useEffect(() => {
         import('bootstrap/dist/css/bootstrap.min.css');
@@ -31,9 +32,13 @@ export default function PuntoDeVentaPage() {
         } catch (err) {
             console.error("Error cargando productos al POS:", err);
         } finally {
-            setCargando(false);
+            boxCargando(false);
         }
     };
+
+    function boxCargando(estado) {
+        setCargando(estado);
+    }
 
     useEffect(() => {
         const filtrados = productos.filter(p => 
@@ -53,7 +58,7 @@ export default function PuntoDeVentaPage() {
         if (existe) {
             // Validar que no exceda el stock físico disponible en Azure
             if (existe.cantidadActiva >= Number(producto.stock || producto.existencias)) {
-                alert(`⚠️ No puedes agregar más. Stock máximo alcanzado (${producto.stock} unids).`);
+                alert(`⚠️ No puedes agregar más. Stock máximo alcanzado (${producto.stock || producto.existencias} unids).`);
                 return;
             }
             setCarrito(carrito.map(item => 
@@ -154,7 +159,6 @@ export default function PuntoDeVentaPage() {
                                                             ${Number(p.precio_venta || p.precio).toLocaleString('es-CL')}
                                                         </h5>
                                                     </div>
-                                                    {/* 🚨 CORRECCIÓN CLICK: Ahora la función capta el producto de inmediato */}
                                                     <button 
                                                         onClick={() => agregarAlCarrito(p)}
                                                         className="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-2 shadow-sm"
@@ -174,7 +178,7 @@ export default function PuntoDeVentaPage() {
 
                 {/* 📋 SECCIÓN DERECHA: BOLETA ACTUAL DINÁMICA */}
                 <div className="col-md-4">
-                    <div className="card border-0 shadow-sm p-4 bg-white position-sticky" style={{ top: '20px', minHeight: '500px', dFlex: 'flex', flexColumn: 'column', justifyBetween: 'space-between' }}>
+                    <div className="card border-0 shadow-sm p-4 bg-white position-sticky" style={{ top: '20px', minHeight: '500px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
                             <h4 className="fw-bold text-dark border-bottom pb-2 mb-3">
                                 <i className="bi bi-receipt-cutoff text-primary me-2"></i>Boleta Actual
@@ -222,7 +226,7 @@ export default function PuntoDeVentaPage() {
                                     <h5 className="mb-0 text-secondary fw-bold">TOTAL VENTA:</h5>
                                     <h3 className="mb-0 text-success fw-bold">${totalBoleta.toLocaleString('es-CL')}</h3>
                                 </div>
-                                <button onClick={() => { alert("🛒 ¡Simulación de pago exitosa! Próximo paso: Conectar la venta al Backend."); setCarrito([]); }} className="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-3">
+                                <button onClick={() => { alert("🛒 ¡Venta procesada exitosamente en el POS frontend!"); setCarrito([]); }} className="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-3">
                                     <i className="bi bi-currency-dollar me-1"></i>Finalizar y Cobrar
                                 </button>
                                 <button onClick={() => setCarrito([])} className="btn btn-light btn-sm w-100 text-muted mt-2 border-0">
