@@ -7,8 +7,10 @@ export default function SalesHistoryPage() {
     const [boletaSeleccionada, setBoletaSeleccionada] = useState(null);
     const [detalleBoleta, setDetalleBoleta] = useState([]);
     const [cargando, setCargando] = useState(false);
+    const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
-    const URL_SALES = 'http://127.0.0.1:3000/api/sales';
+    // 🌐 URL conectada oficialmente al Backend Cloud en Render
+    const URL_SALES = 'https://pos-equipo4-backend.onrender.com/api/sales';
 
     useEffect(() => {
         import('bootstrap/dist/css/bootstrap.min.css');
@@ -23,21 +25,25 @@ export default function SalesHistoryPage() {
         setCargando(true);
         try {
             const res = await axios.get(URL_SALES);
-            setHistorialVentas(res.data);
+            setHistorialVentas(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
-            alert("Error al cargar historial: " + err.message);
+            console.error("Error al cargar historial desde Render:", err);
+            setHistorialVentas([]);
         } finally {
             setCargando(false);
         }
     };
 
     const verDetalleBoletaReal = async (id) => {
+        setCargandoDetalle(true);
         try {
             const res = await axios.get(`${URL_SALES}/${id}/detalle`);
             setBoletaSeleccionada(id);
-            setDetalleBoleta(res.data);
+            setDetalleBoleta(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
-            alert("Error al traer desglose: " + err.message);
+            console.error("Error al traer desglose de boleta:", err);
+        } finally {
+            setCargandoDetalle(false);
         }
     };
 
@@ -46,7 +52,7 @@ export default function SalesHistoryPage() {
     const ticketPromedio = cantidadBoletas > 0 ? Math.round(totalRecaudado / cantidadBoletas) : 0;
 
     return (
-        <div className="container p-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+        <div className="container-fluid p-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
             <h1 className="h3 fw-bold mb-4 text-dark">
                 <i className="bi bi-receipt-cutoff text-warning me-2"></i>Módulo Historial de Ventas (Azure)
             </h1>
@@ -76,10 +82,13 @@ export default function SalesHistoryPage() {
             <div className="row">
                 {/* TABLA */}
                 <div className="col-md-7 mb-4">
-                    <div className="card border-0 shadow-sm p-4 bg-white">
+                    <div className="card border-0 shadow-sm p-4 bg-white rounded-3">
                         <div className="table-responsive">
                             {cargando ? (
-                                <div className="text-center py-4">Cargando historial de Azure...</div>
+                                <div className="text-center py-5">
+                                    <div className="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                                    <span className="text-muted small fw-semibold">Sincronizando transacciones de Azure...</span>
+                                </div>
                             ) : (
                                 <table className="table table-hover align-middle" style={{ cursor: 'pointer' }}>
                                     <thead className="table-dark">
@@ -94,9 +103,17 @@ export default function SalesHistoryPage() {
                                             <tr key={v.id} onClick={() => verDetalleBoletaReal(v.id)} className={boletaSeleccionada === v.id ? 'table-warning animate-fade' : ''}>
                                                 <td className="fw-bold text-secondary">#000{v.id} 🔍</td>
                                                 <td className="small">{new Date(v.created_at || v.fecha).toLocaleString('es-CL')}</td>
-                                                <td className="text-end fw-bold text-danger">${Number(v.total).toLocaleString('es-CL')}</td>
+                                                <td className="text-end fw-bold text-success">${Number(v.total).toLocaleString('es-CL')}</td>
                                             </tr>
                                         ))}
+                                        {historialVentas.length === 0 && (
+                                            <tr>
+                                                <td colSpan="3" className="text-center text-muted py-5">
+                                                    <i className="bi bi-folder-x d-block display-6 opacity-25 mb-2"></i>
+                                                    Aún no registras boletas emitidas en la base de datos cloud.
+                                                </td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             )}
@@ -106,14 +123,19 @@ export default function SalesHistoryPage() {
 
                 {/* DESGLOSE */}
                 <div className="col-md-5 mb-4">
-                    <div className="card border-0 shadow-sm p-4 bg-white sticky-top" style={{ top: '20px' }}>
+                    <div className="card border-0 shadow-sm p-4 bg-white rounded-3 sticky-top" style={{ top: '20px' }}>
                         <h5 className="fw-bold text-dark border-bottom pb-2 mb-3">
-                            Artículos en la Boleta #000{boletaSeleccionada}
+                            Artículos en la Boleta {boletaSeleccionada ? `#000${boletaSeleccionada}` : ''}
                         </h5>
-                        {boletaSeleccionada ? (
+                        
+                        {cargandoDetalle ? (
+                            <div className="text-center py-4">
+                                <div className="spinner-border text-secondary spinner-border-sm me-2" role="status"></div>
+                                <span className="text-muted small">Abriendo desglose...</span>
+                            </div>
+                        ) : boletaSeleccionada ? (
                             <ul className="list-group list-group-flush">
                                 {detalleBoleta.map((item, index) => {
-                                    // Validamos alternativas de nombres de llaves de la BD
                                     const nombreProducto = item.nombre || item.product_name || item.name || 'Producto';
                                     const cantidad = item.cantidad || item.quantity || 1;
                                     const subtotal = item.subtotal || item.price || 0;
