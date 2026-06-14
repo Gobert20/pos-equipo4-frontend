@@ -13,6 +13,7 @@ export default function PuntoDeVentaPage() {
 
     // 🌐 Conexión directa al backend oficial alojado en Render
     const URL_PRODUCTS = 'https://pos-equipo4-backend.onrender.com/api/products';
+    const URL_SALES = 'https://pos-equipo4-backend.onrender.com/api/sales'; // <-- Ruta para registrar boletas
 
     useEffect(() => {
         import('bootstrap/dist/css/bootstrap.min.css');
@@ -96,6 +97,37 @@ export default function PuntoDeVentaPage() {
         const precio = Number(item.precio_venta || item.precio || 0);
         return acc + (precio * item.cantidadActiva);
     }, 0);
+
+    // 🚀 NUEVA FUNCIÓN: Envía de verdad la venta al Servidor e impacta en Azure
+    const procesarVentaAzure = async () => {
+        setCargando(true);
+        try {
+            // Estructuramos la información requerida por el backend transaccional
+            const nuevaVenta = {
+                total: totalBoleta,
+                productos: carrito.map(item => ({
+                    id_producto: item.id || item.id_producto,
+                    cantidad: item.cantidadActiva,
+                    precio_unitario: Number(item.precio_venta || item.precio || 0)
+                }))
+            };
+
+            // Petición POST real hacia el servidor remoto
+            await axios.post(URL_SALES, nuevaVenta);
+            
+            alert("🛒 ¡Venta procesada y sincronizada en Azure con éxito!");
+            setCarrito([]); // Limpiar boleta actual
+            
+            // Refrescar el catálogo para ver el stock actualizado inmediatamente
+            await obtenerProductosPOS();
+
+        } catch (err) {
+            console.error("Error al registrar la transacción en Azure:", err);
+            alert("❌ Hubo un problema al conectar con el servidor. Revisa la consola.");
+        } finally {
+            setCargando(false);
+        }
+    };
 
     return (
         <div className="container-fluid p-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
@@ -226,10 +258,18 @@ export default function PuntoDeVentaPage() {
                                     <h5 className="mb-0 text-secondary fw-bold">TOTAL VENTA:</h5>
                                     <h3 className="mb-0 text-success fw-bold">${totalBoleta.toLocaleString('es-CL')}</h3>
                                 </div>
-                                <button onClick={() => { alert("🛒 ¡Venta procesada exitosamente en el POS frontend!"); setCarrito([]); }} className="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-3">
-                                    <i className="bi bi-currency-dollar me-1"></i>Finalizar y Cobrar
+                                <button 
+                                    onClick={procesarVentaAzure} 
+                                    className="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-3"
+                                    disabled={cargando}
+                                >
+                                    {cargando ? (
+                                        <><span className="spinner-border spinner-border-sm me-2"></span>Procesando...</>
+                                    ) : (
+                                        <><i className="bi bi-currency-dollar me-1"></i>Finalizar y Cobrar</>
+                                    )}
                                 </button>
-                                <button onClick={() => setCarrito([])} className="btn btn-light btn-sm w-100 text-muted mt-2 border-0">
+                                <button onClick={() => setCarrito([])} className="btn btn-light btn-sm w-100 text-muted mt-2 border-0" disabled={cargando}>
                                     Vaciar Carrito
                                 </button>
                             </div>
