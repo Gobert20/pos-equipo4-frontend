@@ -49,7 +49,7 @@ const obtenerUsuarios = async () => {
         // 🚀 Realizamos la petición estructurando manualmente la configuración de Axios
         const res = await axios({
             method: 'get',
-            url: 'http://localhost:3000/api/users',
+            url: 'https://pos-equipo4-backend.onrender.com/api/users',
             headers: {
                 'Authorization': token ? `Bearer ${token}` : '',
                 'Content-Type': 'application/json'
@@ -81,7 +81,7 @@ const manejarAgregar = async (e) => {
 
     try {
         // 🚀 Inserción directa en el puerto 3000 de Express + Azure
-        await axios.post('http://localhost:3000/api/users', nuevoUsuario, obtenerConfigSegura());
+        await axios.post('https://pos-equipo4-backend.onrender.com/api/users', nuevoUsuario, obtenerConfigSegura());
         limpiarFormulario();
         obtenerUsuarios(); // Recarga la tabla automáticamente para ver al nuevo operador
     } catch (error) {
@@ -104,7 +104,7 @@ const manejarEliminar = async (id) => {
 
     try {
         // 🚀 Eliminación en el puerto 3000
-        await axios.delete(`http://localhost:3000/api/users/${id}`, obtenerConfigSegura());
+        await axios.delete(`https://pos-equipo4-backend.onrender.com/api/users/${id}`, obtenerConfigSegura());
         obtenerUsuarios();
     } catch (error) {
         console.error("Error al eliminar usuario:", error);

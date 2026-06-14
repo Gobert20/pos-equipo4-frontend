@@ -9,7 +9,7 @@ const isProduction = typeof window !== 'undefined' && !window.location.hostname.
 const api = axios.create({
     baseURL: isProduction 
         ? 'https://pos-equipo4-backend.onrender.com/api' 
-        : 'http://localhost:3000/api',
+        : 'https://pos-equipo4-backend.onrender.com/api',
     withCredentials: true // Permite procesar cookies HttpOnly si el backend las inyecta
 });
 

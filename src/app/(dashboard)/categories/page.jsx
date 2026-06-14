@@ -15,7 +15,7 @@ export default function CategoriasPage() {
     const obtenerCategorias = async () => {
         try {
             // NOTA: Cuando crees tu endpoint en el backend, apuntará aquí
-            const res = await axios.get('http://localhost:3000/api/categories');
+            const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/categories');
             setCategorias(res.data);
         } catch (error) {
             console.error("Error al obtener categorías de Azure:", error);
@@ -35,7 +35,7 @@ export default function CategoriasPage() {
         setCargando(true);
 
         try {
-            await axios.post('http://localhost:3000/api/categories', { nombre: nuevaCategoria });
+            await axios.post('https://pos-equipo4-backend.onrender.com/api/categories', { nombre: nuevaCategoria });
             setNuevaCategoria('');
             obtenerCategorias();
         } catch (error) {
@@ -51,7 +51,7 @@ export default function CategoriasPage() {
 
     const manejarEliminar = async (id) => {
         try {
-            await axios.delete(`http://localhost:3000/api/categories/${id}`);
+            await axios.delete(`https://pos-equipo4-backend.onrender.com/api/categories/${id}`);
             obtenerCategorias();
         } catch (error) {
             console.error("Error al eliminar categoría:", error);

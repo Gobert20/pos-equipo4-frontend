@@ -15,7 +15,7 @@ export default function ClientesPage() {
 
     const obtenerClientes = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/clients');
+            const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/clients');
             setClientes(res.data);
         } catch (error) {
             console.error("Error al obtener clientes de Azure:", error);
@@ -35,7 +35,7 @@ export default function ClientesPage() {
         const nuevoCliente = { nombre, rut, correo };
 
         try {
-            await axios.post('http://localhost:3000/api/clients', nuevoCliente);
+            await axios.post('https://pos-equipo4-backend.onrender.com/api/clients', nuevoCliente);
             limpiarFormulario();
             obtenerClientes();
         } catch (error) {
@@ -56,7 +56,7 @@ export default function ClientesPage() {
 
     const manejarEliminar = async (id) => {
         try {
-            await axios.delete(`http://localhost:3000/api/clients/${id}`);
+            await axios.delete(`https://pos-equipo4-backend.onrender.com/api/clients/${id}`);
             obtenerClientes();
         } catch (error) {
             console.error("Error al eliminar cliente:", error);
