@@ -7,66 +7,66 @@ export default function ReportesPage() {
         totalVentas: 0,
         cantidadTransacciones: 0,
         ticketPromedio: 0,
-        productoEstrella: 'Cargando...'
+        productoEstrella: 'Sin datos'
     });
     const [productosMasVendidos, setProductosMasVendidos] = useState([]);
+    const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
         obtenerDatosReporte();
     }, []);
 
     const obtenerDatosReporte = async () => {
+        setCargando(true);
         try {
             // 📊 1. Consultar el resumen general de ventas del mes
             const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/summary');
-            const datosApi = res.data;
+            const datosApi = res.data || {};
 
-            // Extraemos los montos del mes de forma segura
-            const totalVentasMes = datosApi.ventas_mes?.monto || 0;
-            const transaccionesMes = datosApi.ventas_mes?.cantidad || 0;
+            // Extraemos los montos del mes de forma segura con valores por defecto
+            const totalVentasMes = Number(datosApi.ventas_mes?.monto || 0);
+            const transaccionesMes = Number(datosApi.ventas_mes?.cantidad || 0);
             
             // Calculamos el ticket promedio (evitando división por cero)
             const promedio = transaccionesMes > 0 ? Math.round(totalVentasMes / transaccionesMes) : 0;
 
-            // Guardamos el estado inicial con los KPIs de venta
-            setMetricas({
-                totalVentas: totalVentasMes,
-                cantidadTransacciones: transaccionesMes,
-                ticketPromedio: promedio,
-                productoEstrella: 'Sin datos'
-            });
+            // Inicializamos las métricas base
+            let estrellaSugerido = 'Sin datos';
 
-            // ⚡ 2. Consultar el ranking de productos más vendidos en paralelo
+            // ⚡ 2. Consultar el ranking de productos más vendidos
             try {
                 const resTop = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/top-products?limit=5');
                 
-                // Verificamos que resTop.data sea un arreglo antes de mapear
                 if (resTop.data && Array.isArray(resTop.data)) {
                     const topFormateado = resTop.data.map((prod, index) => ({
-                        id: index + 1,
+                        id: prod.id || index + 1,
                         nombre: prod.nombre || 'Producto Desconocido',
-                        cantidad: prod.unidades_vendidas || 0,
-                        total: prod.ingreso_total || 0
+                        cantidad: Number(prod.unidades_vendidas || 0),
+                        total: Number(prod.ingreso_total || 0)
                     }));
 
                     setProductosMasVendidos(topFormateado);
 
-                    // Si la base de datos arrojó un líder en ventas, actualizamos el KPI del Producto Estrella
                     if (topFormateado.length > 0) {
-                        setMetricas(prev => ({
-                            ...prev,
-                            productoEstrella: topFormateado[0].nombre
-                        }));
+                        estrellaSugerido = topFormateado[0].nombre;
                     }
                 }
             } catch (topError) {
-                console.error("Aviso: No se pudo procesar el ranking de productos aún:", topError);
+                console.warn("Aviso: Ranking de productos no disponible temporalmente:", topError);
             }
 
+            // Asignamos todo el estado unificado de una sola vez
+            setMetricas({
+                totalVentas: totalVentasMes,
+                cantidadTransacciones: transaccionesMes,
+                ticketPromedio: promedio,
+                productoEstrella: estrellaSugerido
+            });
+
         } catch (error) {
-            console.error("Error al obtener reportes de Azure:", error);
+            console.error("Error al obtener reportes de Azure, activando datos de simulación:", error);
             
-            // 🛡️ ZONA ANTI-CRASH: Datos de respaldo idénticos a tus pruebas iniciales
+            // 🛡️ VALORES DE RESPALDO: Se activan únicamente si el servidor de Render falla por completo
             setMetricas({
                 totalVentas: 458990,
                 cantidadTransacciones: 34,
@@ -79,16 +79,17 @@ export default function ReportesPage() {
                 { id: 3, nombre: 'Sándwich Completo', cantidad: 14, total: 49000 },
                 { id: 4, nombre: 'Audífonos Bluetooth', cantidad: 2, total: 51980 }
             ]);
+        } finally {
+            setCargando(false);
         }
     };
 
-    // Función auxiliar para formatear a pesos chilenos / moneda local
     const formatearMoneda = (valor) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
     };
 
     return (
-        <div className="container-fluid p-4">
+        <div className="container-fluid p-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
             {/* Encabezado */}
             <div className="d-flex align-items-center gap-3 mb-4">
                 <div className="bg-primary text-white p-3 rounded-3 shadow-sm">
@@ -100,109 +101,121 @@ export default function ReportesPage() {
                 </div>
             </div>
 
-            {/* Fila de Tarjetas Métricas (KPIs) */}
-            <div className="row g-3 mb-4">
-                {/* KPI 1: Ingresos Totales */}
-                <div className="col-12 col-sm-6 col-xl-3">
-                    <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
-                        <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                                <span className="text-muted small fw-bold text-uppercase">Ingresos Totales</span>
-                                <h3 className="fw-bold text-dark mt-1 mb-0">{formatearMoneda(metricas.totalVentas)}</h3>
+            {cargando ? (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando métricas...</span>
+                    </div>
+                    <p className="text-muted mt-2 small fw-semibold">Sincronizando analíticas con la nube...</p>
+                </div>
+            ) : (
+                <>
+                    {/* Fila de Tarjetas Métricas (KPIs) */}
+                    <div className="row g-3 mb-4">
+                        {/* KPI 1: Ingresos Totales */}
+                        <div className="col-12 col-sm-6 col-xl-3">
+                            <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span className="text-muted small fw-bold text-uppercase">Ingresos Totales</span>
+                                        <h3 className="fw-bold text-dark mt-1 mb-0">{formatearMoneda(metricas.totalVentas)}</h3>
+                                    </div>
+                                    <div className="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                                        <i className="bi bi-cash-coin fs-3"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-success bg-opacity-10 text-success p-3 rounded-circle">
-                                <i className="bi bi-cash-coin fs-3"></i>
+                        </div>
+
+                        {/* KPI 2: Cantidad Transacciones */}
+                        <div className="col-12 col-sm-6 col-xl-3">
+                            <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span className="text-muted small fw-bold text-uppercase">N° Transacciones</span>
+                                        <h3 className="fw-bold text-dark mt-1 mb-0">{metricas.cantidadTransacciones}</h3>
+                                    </div>
+                                    <div className="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                                        <i className="bi bi-receipt-cutoff fs-3"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* KPI 3: Ticket Promedio */}
+                        <div className="col-12 col-sm-6 col-xl-3">
+                            <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span className="text-muted small fw-bold text-uppercase">Ticket Promedio</span>
+                                        <h3 className="fw-bold text-dark mt-1 mb-0">{formatearMoneda(metricas.ticketPromedio)}</h3>
+                                    </div>
+                                    <div className="bg-info bg-opacity-10 text-info p-3 rounded-circle">
+                                        <i className="bi bi-calculator fs-3"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* KPI 4: Producto Estrella */}
+                        <div className="col-12 col-sm-6 col-xl-3">
+                            <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <div style={{ maxWidth: '70%' }}>
+                                        <span className="text-muted small fw-bold text-uppercase">Producto Estrella</span>
+                                        <h5 className="fw-bold text-dark mt-2 mb-0 text-truncate">
+                                            {metricas.productoEstrella}
+                                        </h5>
+                                    </div>
+                                    <div className="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                                        <i className="bi bi-star-fill fs-3"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* KPI 2: Cantidad Transacciones */}
-                <div className="col-12 col-sm-6 col-xl-3">
-                    <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
-                        <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                                <span className="text-muted small fw-bold text-uppercase">N° Transacciones</span>
-                                <h3 className="fw-bold text-dark mt-1 mb-0">{metricas.cantidadTransacciones}</h3>
-                            </div>
-                            <div className="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
-                                <i className="bi bi-receipt-cutoff fs-3"></i>
-                            </div>
+                    {/* Tabla de Productos Más Vendidos */}
+                    <div className="card border-0 shadow-sm rounded-3 bg-white overflow-hidden">
+                        <div className="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                            <span className="fw-bold text-secondary text-uppercase small">Top Productos Más Demandados</span>
+                            <span className="badge bg-primary rounded-pill">Ranking Cloud</span>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th style={{ width: '70px' }} className="text-center">Rank</th>
+                                        <th>Nombre del Producto</th>
+                                        <th className="text-center">Unidades Vendidas</th>
+                                        <th className="text-end pe-4">Total Recaudado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {productosMasVendidos.map((prod, index) => (
+                                        <tr key={prod.id || index}>
+                                            <td className="text-center fw-bold text-secondary">#{index + 1}</td>
+                                            <td>
+                                                <span className="fw-semibold text-dark">{prod.nombre}</span>
+                                            </td>
+                                            <td className="text-center fw-bold text-primary">{prod.cantidad} u.</td>
+                                            <td className="text-end pe-4 fw-bold text-success">{formatearMoneda(prod.total)}</td>
+                                        </tr>
+                                    ))}
+                                    {productosMasVendidos.length === 0 && (
+                                        <tr>
+                                            <td colSpan="4" className="text-center text-muted py-5">
+                                                <i className="bi bi-clipboard-data d-block display-6 opacity-25 mb-2"></i>
+                                                No se registran datos de ventas procesadas para estructurar el ranking.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-
-                {/* KPI 3: Ticket Promedio */}
-                <div className="col-12 col-sm-6 col-xl-3">
-                    <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
-                        <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                                <span className="text-muted small fw-bold text-uppercase">Ticket Promedio</span>
-                                <h3 className="fw-bold text-dark mt-1 mb-0">{formatearMoneda(metricas.ticketPromedio)}</h3>
-                            </div>
-                            <div className="bg-info bg-opacity-10 text-info p-3 rounded-circle">
-                                <i className="bi bi-calculator fs-3"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* KPI 4: Producto Estrella */}
-                <div className="col-12 col-sm-6 col-xl-3">
-                    <div className="card border-0 shadow-sm p-3 rounded-3 bg-white h-100">
-                        <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                                <span className="text-muted small fw-bold text-uppercase">Producto Estrella</span>
-                                <h5 className="fw-bold text-dark mt-2 mb-0 text-truncate" style={{ maxWidth: '160px' }}>
-                                    {metricas.productoEstrella}
-                                </h5>
-                            </div>
-                            <div className="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
-                                <i className="bi bi-star-fill fs-3"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tabla de Productos Más Vendidos */}
-            <div className="card border-0 shadow-sm rounded-3 bg-white overflow-hidden">
-                <div className="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
-                    <span className="fw-bold text-secondary text-uppercase small">Top Productos Más Demandados</span>
-                    <span className="badge bg-primary rounded-pill">Ranking Cloud</span>
-                </div>
-                <div className="table-responsive">
-                    <table className="table table-hover align-middle mb-0">
-                        <thead className="table-light">
-                            <tr>
-                                <th style={{ width: '70px' }} className="text-center">Rank</th>
-                                <th>Nombre del Producto</th>
-                                <th className="text-center">Unidades Vendidas</th>
-                                <th className="text-end pe-4">Total Recaudado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {productosMasVendidos.map((prod, index) => (
-                                <tr key={prod.id || index}>
-                                    <td className="text-center fw-bold text-secondary">#{index + 1}</td>
-                                    <td>
-                                        <span className="fw-semibold text-dark">{prod.nombre}</span>
-                                    </td>
-                                    <td className="text-center fw-bold text-primary">{prod.cantidad} u.</td>
-                                    <td className="text-end pe-4 fw-bold text-success">{formatearMoneda(prod.total)}</td>
-                                </tr>
-                            ))}
-                            {productosMasVendidos.length === 0 && (
-                                <tr>
-                                    <td colSpan="4" className="text-center text-muted py-4">
-                                        No se registran datos de ventas procesadas para estructurar el ranking.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                </>
+            )}
         </div>
     );
 }
