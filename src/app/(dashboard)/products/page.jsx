@@ -16,7 +16,8 @@ export default function ProductsManagementPage() {
     const [idEditando, setIdEditando] = useState(null);
     const [vista, setVista] = useState('tabla'); 
 
-    const URL_PRODUCTS = 'http://127.0.0.1:3000/api/products';
+    // ✅ CORREGIDO: Ahora apunta directamente a tu servidor en producción en Render
+    const URL_PRODUCTS = 'https://pos-equipo4-backend.onrender.com/api/products';
 
     useEffect(() => {
         import('bootstrap/dist/css/bootstrap.min.css');
@@ -31,10 +32,13 @@ export default function ProductsManagementPage() {
         setCargando(true);
         try {
             const res = await axios.get(URL_PRODUCTS);
-            setProductos(res.data);
-            setProductosFiltrados(res.data);
+            // Validamos que la respuesta contenga un array para evitar crasheos si la base de datos cambia
+            const datos = Array.isArray(res.data) ? res.data : [];
+            setProductos(datos);
+            setProductosFiltrados(datos);
         } catch (err) {
-            alert("Error al conectar con Azure: " + err.message);
+            console.error("Error de conexión:", err);
+            alert("Error al conectar con Azure Cloud a través de Render. Revisa la consola o los logs del servidor.");
         } finally {
             setCargando(false);
         }
@@ -191,62 +195,71 @@ export default function ProductsManagementPage() {
                     </div>
 
                     <div className="table-responsive">
-                        <table className="table table-hover align-middle">
-                            <thead className="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Imagen</th>
-                                    <th>Nombre del Producto</th>
-                                    <th>Precio de Venta</th>
-                                    <th>Existencias</th>
-                                    <th className="text-center" style={{ width: '150px' }}>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {productosFiltrados.map(p => {
-                                    const idReal = p.id || p.id_producto;
-                                    const fotoDb = p.imagen_url || p.imagen;
-
-                                    return (
-                                        <tr key={idReal}>
-                                            <td className="text-muted small">#00{idReal}</td>
-                                            <td>
-                                                {fotoDb && fotoDb.startsWith('data:image') ? (
-                                                    <img 
-                                                        src={fotoDb} 
-                                                        alt={p.nombre} 
-                                                        className="rounded shadow-sm border" 
-                                                        style={{ width: '45px', height: '45px', objectFit: 'cover' }} 
-                                                    />
-                                                ) : (
-                                                    <div className="bg-light text-muted d-flex align-items-center justify-content-center rounded border" style={{ width: '45px', height: '45px', fontSize: '10px' }}>Sin foto</div>
-                                                )}
-                                            </td>
-                                            <td className="fw-bold text-dark">{p.nombre}</td>
-                                            <td className="text-success fw-bold">${Number(p.precio_venta || p.precio).toLocaleString('es-CL')}</td>
-                                            <td>
-                                                <span className={`badge ${Number(p.stock || p.existencias) < 10 ? 'bg-danger' : 'bg-light text-dark border'} px-2 py-2`}>
-                                                    {p.stock || p.existencias} unidades
-                                                </span>
-                                            </td>
-                                            <td className="text-center">
-                                                <button onClick={() => prepararEdicion(p)} className="btn btn-outline-warning btn-sm me-2">
-                                                    <i className="bi bi-pencil"></i>
-                                                </button>
-                                                <button onClick={() => borrarProducto(idReal)} className="btn btn-outline-danger btn-sm">
-                                                    <i className="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                                {productosFiltrados.length === 0 && (
+                        {cargando ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Cargando...</span>
+                                </div>
+                                <p className="text-muted mt-2">Conectando con Azure Cloud...</p>
+                            </div>
+                        ) : (
+                            <table className="table table-hover align-middle">
+                                <thead className="table-dark">
                                     <tr>
-                                        <td colSpan="6" className="text-center text-muted py-4">No se encontraron productos en la base de datos cloud.</td>
+                                        <th>ID</th>
+                                        <th>Imagen</th>
+                                        <th>Nombre del Producto</th>
+                                        <th>Precio de Venta</th>
+                                        <th>Existencias</th>
+                                        <th className="text-center" style={{ width: '150px' }}>Acciones</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {productosFiltrados.map(p => {
+                                        const idReal = p.id || p.id_producto;
+                                        const fotoDb = p.imagen_url || p.imagen;
+
+                                        return (
+                                            <tr key={idReal}>
+                                                <td className="text-muted small">#00{idReal}</td>
+                                                <td>
+                                                    {fotoDb && fotoDb.startsWith('data:image') ? (
+                                                        <img 
+                                                            src={fotoDb} 
+                                                            alt={p.nombre} 
+                                                            className="rounded shadow-sm border" 
+                                                            style={{ width: '45px', height: '45px', objectFit: 'cover' }} 
+                                                        />
+                                                    ) : (
+                                                        <div className="bg-light text-muted d-flex align-items-center justify-content-center rounded border" style={{ width: '45px', height: '45px', fontSize: '10px' }}>Sin foto</div>
+                                                    )}
+                                                </td>
+                                                <td className="fw-bold text-dark">{p.nombre}</td>
+                                                <td className="text-success fw-bold">${Number(p.precio_venta || p.precio).toLocaleString('es-CL')}</td>
+                                                <td>
+                                                    <span className={`badge ${Number(p.stock || p.existencias) < 10 ? 'bg-danger' : 'bg-light text-dark border'} px-2 py-2`}>
+                                                        {p.stock || p.existencias} unidades
+                                                    </span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <button onClick={() => prepararEdicion(p)} className="btn btn-outline-warning btn-sm me-2">
+                                                        <i className="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button onClick={() => borrarProducto(idReal)} className="btn btn-outline-danger btn-sm">
+                                                        <i className="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {productosFiltrados.length === 0 && (
+                                        <tr>
+                                            <td colSpan="6" className="text-center text-muted py-4">No se encontraron productos en la base de datos cloud.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             ) : (
