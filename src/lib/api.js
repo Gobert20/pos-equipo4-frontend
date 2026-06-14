@@ -1,10 +1,13 @@
 import axios from 'axios';
 
+const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+
 const api = axios.create({
-    // 🚀 ¡CONECTADO A LA NUBE! Apuntamos directamente a Render
-    baseURL: 'https://pos-equipo4-backend.onrender.com/api', 
-    timeout: 8000, // Si el backend no responde en 8 segundos, corta la petición
-    withCredentials: true, // Permite que viajen las cookies HttpOnly entre Next.js y el Backend
+    baseURL: isProduction 
+        ? 'https://pos-equipo4-backend.onrender.com/api' 
+        : 'http://localhost:3000/api', 
+    timeout: 30000, // 👈 ¡Subido a 30 segundos para evitar los "Network Error"!
+    withCredentials: true, 
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
