@@ -17,7 +17,7 @@ export default function ReportesPage() {
 
     const obtenerDatosReporte = async () => {
         try {
-            const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/dashboard');
+            const res = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/summary');
             setMetricas(res.data.metricas);
             setProductosMasVendidos(res.data.topProductos);
         } catch (error) {
