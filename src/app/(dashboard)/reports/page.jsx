@@ -40,22 +40,24 @@ export default function ReportesPage() {
             try {
                 const resTop = await axios.get('https://pos-equipo4-backend.onrender.com/api/reports/top-products?limit=5');
                 
-                // Mapeamos las llaves de la base de datos (unidades_vendidas, ingreso_total) al formato de la tabla
-                const topFormateado = resTop.data.map((prod, index) => ({
-                    id: index + 1,
-                    nombre: prod.nombre,
-                    cantidad: prod.unidades_vendidas,
-                    total: prod.ingreso_total
-                }));
-
-                setProductosMasVendidos(topFormateado);
-
-                // Si la base de datos arrojó un líder en ventas, actualizamos el KPI del Producto Estrella
-                if (topFormateado.length > 0) {
-                    setMetricas(prev => ({
-                        ...prev,
-                        productoEstrella: topFormateado[0].nombre
+                // Verificamos que resTop.data sea un arreglo antes de mapear
+                if (resTop.data && Array.isArray(resTop.data)) {
+                    const topFormateado = resTop.data.map((prod, index) => ({
+                        id: index + 1,
+                        nombre: prod.nombre || 'Producto Desconocido',
+                        cantidad: prod.unidades_vendidas || 0,
+                        total: prod.ingreso_total || 0
                     }));
+
+                    setProductosMasVendidos(topFormateado);
+
+                    // Si la base de datos arrojó un líder en ventas, actualizamos el KPI del Producto Estrella
+                    if (topFormateado.length > 0) {
+                        setMetricas(prev => ({
+                            ...prev,
+                            productoEstrella: topFormateado[0].nombre
+                        }));
+                    }
                 }
             } catch (topError) {
                 console.error("Aviso: No se pudo procesar el ranking de productos aún:", topError);
@@ -195,7 +197,6 @@ export default function ReportesPage() {
                                     <td colSpan="4" className="text-center text-muted py-4">
                                         No se registran datos de ventas procesadas para estructurar el ranking.
                                     </td>
-                                end
                                 </tr>
                             )}
                         </tbody>
