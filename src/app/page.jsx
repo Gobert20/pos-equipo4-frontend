@@ -3,9 +3,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios'; 
 
-// 🚀 Instancia local unificada orientada al microservicio en Azure
+// 🚀 DETECCIÓN DINÁMICA: Detecta si está en internet (Vercel) o en tu PC local (localhost)
+const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api',
+    baseURL: isProduction 
+        ? 'https://pos-equipo4-backend.onrender.com/api' 
+        : 'http://localhost:3000/api',
     withCredentials: true // Permite procesar cookies HttpOnly si el backend las inyecta
 });
 
@@ -26,7 +30,6 @@ export default function LoginPage() {
     const manejarLogin = async (e) => {
         e.preventDefault();
         
-        // Validación preventiva en el cliente antes del envío de red
         if (!email.trim() || !password.trim()) {
             alert("❌ Por favor, rellene todos los campos requeridos.");
             return;
@@ -35,36 +38,30 @@ export default function LoginPage() {
         setCargando(true);
 
         try {
-            // 🔐 Petición POST mapeada al controlador adaptativo de Express
             const res = await api.post('/auth/login', { 
                 email: email.trim(), 
                 password: password 
             });
             
-            // 🔄 Sincronización de Datos del Operador (Respuesta mapeada de Azure)
             if (res.data && res.data.token) {
-                // Guardamos el token JWT para que 'axios' en otras pestañas pueda leerlo
                 localStorage.setItem('token', res.data.token);
             }
 
             if (res.data && res.data.user) {
-                // Sincroniza tanto el string plano como el objeto completo para los Navbar
                 localStorage.setItem('usuario_nombre', res.data.user.nombre);
                 localStorage.setItem('usuario', JSON.stringify(res.data.user));
             }
 
             setCargando(false);
-            
-            // Redirección hacia el módulo de Usuarios para comprobar la conexión PostgreSQL
             router.push('/users');
 
         } catch (err) {
             setCargando(false);
             console.error("Fallo en login:", err);
             
-            // Captura dinámica del string de error enviado por authController.js
-            const mensajeError = err.response?.data?.error || "No se pudo conectar con el backend en el puerto 3000.";
-            alert("❌ " + mensajeError);
+            // 🔍 ALERTA INTELIGENTE: Muestra el error real devuelto por la nube o la red
+            const mensajeError = err.response?.data?.error || err.response?.data?.message || err.message;
+            alert("❌ Error de comunicación: " + mensajeError);
         }
     };
 
