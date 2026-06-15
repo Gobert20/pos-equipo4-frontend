@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 const CATEGORY_COLORS = {
-  'Base de Datos':       { bg: 'bg-blue-950/30', border: 'border-blue-900/50',    title: 'text-blue-400',   badge: 'bg-blue-900/50 text-blue-300'   },
+  'Base de Datos':       { bg: 'bg-blue-950/30', border: 'border-blue-900/50',    title: 'text-blue-400',    badge: 'bg-blue-900/50 text-blue-300'   },
   'Alta Disponibilidad': { bg: 'bg-purple-950/30', border: 'border-purple-900/50', title: 'text-purple-400', badge: 'bg-purple-900/50 text-purple-300' },
   'Almacenamiento':      { bg: 'bg-amber-950/30',  border: 'border-amber-900/50',  title: 'text-amber-400',  badge: 'bg-amber-900/50 text-amber-300'  },
   'Seguridad':           { bg: 'bg-red-950/30',    border: 'border-red-900/50',    title: 'text-red-400',    badge: 'bg-red-900/50 text-red-300'      },
@@ -85,6 +85,7 @@ export default function EvalPage() {
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
+  // NUEVA FUNCIÓN CORREGIDA: Comunicación por Query Params (?key=) libres de CORS Preflight
   const fetchReport = async (e) => {
     e.preventDefault();
     setError('');
@@ -93,13 +94,10 @@ export default function EvalPage() {
 
     const baseURL = url.replace(/\/+$/, '');
     try {
-      const res = await fetch(`${baseURL}/api/eval`, {
-        method: 'GET',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-eval-key': key 
-        },
+      const res = await fetch(`${baseURL}/api/eval?key=${encodeURIComponent(key)}`, {
+        method: 'GET'
       });
+      
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `Error del servidor (HTTP ${res.status})`);
