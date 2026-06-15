@@ -2,45 +2,47 @@
 import { useState } from 'react';
 
 const CATEGORY_COLORS = {
-  'Base de Datos':   { bg: 'bg-blue-50',   border: 'border-blue-200',  title: 'text-blue-800',  badge: 'bg-blue-100 text-blue-700'  },
-  'Alta Disponibilidad': { bg: 'bg-purple-50', border: 'border-purple-200', title: 'text-purple-800', badge: 'bg-purple-100 text-purple-700' },
-  'Almacenamiento':  { bg: 'bg-amber-50',  border: 'border-amber-200', title: 'text-amber-800', badge: 'bg-amber-100 text-amber-700'  },
-  'Seguridad':       { bg: 'bg-red-50',    border: 'border-red-200',   title: 'text-red-800',   badge: 'bg-red-100 text-red-700'     },
-  'Observabilidad':  { bg: 'bg-green-50',  border: 'border-green-200', title: 'text-green-800', badge: 'bg-green-100 text-green-700' },
+  'Base de Datos':       { bg: 'bg-blue-950/30', border: 'border-blue-900/50',    title: 'text-blue-400',   badge: 'bg-blue-900/50 text-blue-300'   },
+  'Alta Disponibilidad': { bg: 'bg-purple-950/30', border: 'border-purple-900/50', title: 'text-purple-400', badge: 'bg-purple-900/50 text-purple-300' },
+  'Almacenamiento':      { bg: 'bg-amber-950/30',  border: 'border-amber-900/50',  title: 'text-amber-400',  badge: 'bg-amber-900/50 text-amber-300'  },
+  'Seguridad':           { bg: 'bg-red-950/30',    border: 'border-red-900/50',    title: 'text-red-400',    badge: 'bg-red-900/50 text-red-300'      },
+  'Observabilidad':      { bg: 'bg-green-950/30',  border: 'border-green-200/50', title: 'text-green-400', badge: 'bg-green-900/50 text-green-300' },
 };
 
 function ScoreRing({ pct }) {
   const r   = 54;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
-  const color = pct >= 75 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+  const color = pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
 
   return (
-    <svg width="140" height="140" className="rotate-[-90deg]">
-      <circle cx="70" cy="70" r={r} fill="none" stroke="#e5e7eb" strokeWidth="12" />
-      <circle cx="70" cy="70" r={r} fill="none" stroke={color} strokeWidth="12"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
-      <text x="70" y="75" textAnchor="middle" dominantBaseline="middle"
-        style={{ fill: color, fontSize: 28, fontWeight: 700, transform: 'rotate(90deg)', transformOrigin: '70px 70px' }}>
+    <div className="relative flex items-center justify-center w-[140px] h-[140px]">
+      <svg width="140" height="140" className="rotate-[-90deg]">
+        <circle cx="70" cy="70" r={r} fill="none" stroke="#374151" strokeWidth="12" />
+        <circle cx="70" cy="70" r={r} fill="none" stroke={color} strokeWidth="12"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+      </svg>
+      <div className="absolute font-black text-2xl" style={{ color }}>
         {pct}%
-      </text>
-    </svg>
+      </div>
+    </div>
   );
 }
 
 function CategoryCard({ name, data }) {
   const [open, setOpen] = useState(true);
-  const c = CATEGORY_COLORS[name] || { bg: 'bg-gray-50', border: 'border-gray-200', title: 'text-gray-800', badge: 'bg-gray-100 text-gray-700' };
+  const c = CATEGORY_COLORS[name] || { bg: 'bg-gray-800', border: 'border-gray-700', title: 'text-gray-200', badge: 'bg-gray-700 text-gray-300' };
   const catPct = Math.round((data.pts / data.maxPts) * 100);
 
   return (
-    <div className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+    <div className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden backdrop-blur-sm`}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className={`font-bold text-base ${c.title}`}>{name}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.badge}`}>
             {data.pts}/{data.maxPts} pts
@@ -49,23 +51,23 @@ function CategoryCard({ name, data }) {
             {catPct}%
           </span>
         </div>
-        <span className="text-gray-400 text-sm">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div className="border-t border-gray-200 divide-y divide-gray-100">
+        <div className="border-t border-gray-700/50 divide-y divide-gray-700/30">
           {data.items.map((item, i) => (
-            <div key={i} className="px-5 py-3 flex items-start gap-3 bg-white/70">
-              <span className={`mt-0.5 text-lg leading-none ${item.pass ? 'text-green-500' : 'text-red-400'}`}>
+            <div key={i} className="px-5 py-3 flex items-start gap-3 bg-gray-900/40">
+              <span className={`mt-0.5 text-lg font-bold leading-none shrink-0 ${item.pass ? 'text-green-400' : 'text-red-400'}`}>
                 {item.pass ? '✓' : '✗'}
               </span>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${item.pass ? 'text-gray-900' : 'text-gray-500'}`}>
+                <p className={`text-sm font-medium ${item.pass ? 'text-gray-200' : 'text-gray-400 line-through'}`}>
                   {item.name}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5 font-mono break-all">{item.detail}</p>
+                <p className="text-xs text-gray-400 mt-0.5 font-mono break-all bg-black/20 p-1.5 rounded border border-gray-800">{item.detail}</p>
               </div>
-              <span className={`text-xs font-bold shrink-0 ${item.pass ? 'text-green-600' : 'text-red-400'}`}>
+              <span className={`text-xs font-bold shrink-0 font-mono ${item.pass ? 'text-green-400' : 'text-red-400'}`}>
                 {item.pts}/{item.maxPts}
               </span>
             </div>
@@ -89,122 +91,134 @@ export default function EvalPage() {
     setReport(null);
     setLoading(true);
 
-    // Llamada directa al backend del equipo (URL externa)
     const baseURL = url.replace(/\/+$/, '');
     try {
       const res = await fetch(`${baseURL}/api/eval`, {
-        headers: { 'x-eval-key': key },
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-eval-key': key 
+        },
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
+        throw new Error(body.error || `Error del servidor (HTTP ${res.status})`);
       }
-      setReport(await res.json());
+      const data = await res.json();
+      setReport(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'No se pudo conectar con el backend de Render. Revisa la URL y los CORS.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-6 antialiased font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
 
-        {/* Header */}
+        {/* Cabecera */}
         <div className="text-center pt-4">
-          <p className="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-1">
+          <p className="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-1 font-bold">
             Evaluación de Módulo — Cloud Computing
           </p>
-          <h1 className="text-3xl font-black text-white">Panel de Evaluación Docente</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Panel de Evaluación Docente</h1>
+          <p className="text-gray-400 text-sm mt-1.5">
             Instituto Profesional Virginia Gómez — Uso exclusivo del docente
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={fetchReport} className="bg-gray-800 rounded-2xl p-6 space-y-4 border border-gray-700">
-          <h2 className="font-semibold text-gray-200">Conectar al sistema del equipo</h2>
+        {/* Formulario de Conexión */}
+        <form onSubmit={fetchReport} className="bg-gray-800 rounded-2xl p-6 space-y-5 border border-gray-700 shadow-xl">
+          <h2 className="font-bold text-lg text-gray-100 border-b border-gray-700/50 pb-2">Conectar al sistema del equipo</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">URL del backend del equipo</label>
+              <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL del backend del equipo</label>
               <input
                 required
                 type="url"
-                placeholder="https://backend.equipo.example.com"
+                placeholder="https://pos-equipo4-backend.onrender.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Clave de evaluación (EVAL_SECRET)</label>
+              <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Clave de evaluación (EVAL_SECRET)</label>
               <input
                 required
                 type="password"
                 placeholder="••••••••••••"
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               />
             </div>
           </div>
+          
           {error && (
-            <div className="text-red-400 text-sm bg-red-900/30 border border-red-800 rounded-lg px-4 py-2">
-              {error}
+            <div className="text-red-400 text-sm bg-red-950/40 border border-red-900/50 rounded-lg px-4 py-2.5 font-medium">
+              ⚠️ {error}
             </div>
           )}
+          
           <button
             type="submit"
             disabled={loading}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2 px-6 rounded-lg transition-colors text-sm"
+            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg transition-all text-sm shadow-md cursor-pointer"
           >
-            {loading ? 'Evaluando...' : 'Evaluar sistema'}
+            {loading ? '⏳ Evaluando...' : '🎯 Evaluar sistema'}
           </button>
         </form>
 
-        {/* Resultados */}
+        {/* Resultados del Reporte */}
         {report && (
-          <div className="space-y-5">
+          <div className="space-y-6 animate-fade-in">
 
-            {/* Meta + Score */}
-            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 flex flex-col sm:flex-row items-center gap-6">
+            {/* Tarjeta de Puntaje */}
+            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-xl flex flex-col sm:flex-row items-center gap-6">
               <ScoreRing pct={report.score.pct} />
-              <div className="flex-1 space-y-1">
-                <p className="text-2xl font-black text-white">
+              <div className="flex-1 space-y-2 text-center sm:text-left">
+                <p className="text-3xl font-black tracking-tight text-white">
                   {report.score.total} / {report.score.max} puntos
                 </p>
-                <p className={`text-lg font-bold ${report.score.pct >= 75 ? 'text-green-400' : report.score.pct >= 50 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {report.score.pct >= 75 ? 'Implementación lograda' : report.score.pct >= 50 ? 'Implementación parcial' : 'Implementación insuficiente'}
-                </p>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-gray-400 mt-2 font-mono">
-                  <span>Hostname: <span className="text-gray-200">{report.meta.hostname}</span></span>
-                  <span>Node.js: <span className="text-gray-200">{report.meta.nodeVersion}</span></span>
-                  <span>Entorno: <span className={report.meta.nodeEnv === 'production' ? 'text-green-400 font-bold' : 'text-amber-400'}>{report.meta.nodeEnv}</span></span>
-                  <span>Uptime: <span className="text-gray-200">{report.meta.uptime}</span></span>
-                  <span>Puerto: <span className="text-gray-200">{report.meta.port}</span></span>
-                  <span>Fecha eval: <span className="text-gray-200">{new Date(report.meta.timestamp).toLocaleString('es-CL')}</span></span>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  report.score.pct >= 75 ? 'bg-green-950 text-green-400 border border-green-900' : 
+                  report.score.pct >= 50 ? 'bg-amber-950 text-amber-400 border border-amber-900' : 
+                  'bg-red-950 text-red-400 border border-red-900'
+                }`}>
+                  {report.score.pct >= 75 ? '🚀 Implementación lograda' : report.score.pct >= 50 ? '⚠️ Implementación parcial' : '❌ Insuficiente'}
+                </span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-400 mt-4 font-mono bg-black/20 p-3 rounded-xl border border-gray-700/50 text-left">
+                  <span>🖥️ Hostname: <span className="text-gray-200">{report.meta.hostname}</span></span>
+                  <span>📦 Node.js: <span className="text-gray-200">{report.meta.nodeVersion}</span></span>
+                  <span>⚙️ Entorno: <span className={report.meta.nodeEnv === 'production' ? 'text-green-400 font-bold' : 'text-amber-400'}>{report.meta.nodeEnv}</span></span>
+                  <span>⏱️ Uptime: <span className="text-gray-200">{report.meta.uptime}</span></span>
+                  <span>🔌 Puerto: <span className="text-gray-200">{report.meta.port}</span></span>
+                  <span>📅 Fecha: <span className="text-gray-200">{new Date(report.meta.timestamp).toLocaleString('es-CL')}</span></span>
                 </div>
               </div>
             </div>
 
-            {/* Barra de progreso por categoría */}
-            <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
-              <h2 className="font-semibold text-gray-200 mb-4">Resumen por categoría</h2>
-              <div className="space-y-3">
+            {/* Progreso Visual */}
+            <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-xl">
+              <h2 className="font-bold text-gray-100 mb-4 text-base uppercase tracking-wider">Resumen por categoría</h2>
+              <div className="space-y-4">
                 {Object.entries(report.byCategory).map(([cat, data]) => {
                   const pct = Math.round((data.pts / data.maxPts) * 100);
-                  const c = CATEGORY_COLORS[cat] || {};
                   return (
-                    <div key={cat}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-gray-300">{cat}</span>
+                    <div key={cat} className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-gray-300">{cat}</span>
                         <span className="text-gray-400 font-mono">{data.pts}/{data.maxPts} ({pct}%)</span>
                       </div>
-                      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-2.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700/30">
                         <div
                           style={{ width: `${pct}%` }}
-                          className={`h-full rounded-full transition-all duration-700 ${pct >= 75 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                          className={`h-full rounded-full transition-all duration-1000 ${
+                            pct >= 75 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                          }`}
                         />
                       </div>
                     </div>
@@ -213,16 +227,16 @@ export default function EvalPage() {
               </div>
             </div>
 
-            {/* Detalle por categoría */}
+            {/* Desglose Desplegable */}
             <div className="space-y-3">
               {Object.entries(report.byCategory).map(([cat, data]) => (
                 <CategoryCard key={cat} name={cat} data={data} />
               ))}
             </div>
 
-            {/* Pie */}
-            <p className="text-center text-xs text-gray-600 pb-4">
-              Evaluación automática — Sistema POS · Prof. Patricio Balboa · {new Date().getFullYear()}
+            {/* Pie de Página */}
+            <p className="text-center text-xs text-gray-500 pt-2 pb-4 font-mono">
+              Evaluación automatizada — Sistema POS · Prof. Patricio Balboa · 2026
             </p>
           </div>
         )}
