@@ -85,16 +85,22 @@ export default function EvalPage() {
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
-  // NUEVA FUNCIÓN CORREGIDA: Comunicación por Query Params (?key=) libres de CORS Preflight
+  // FUNCIÓN REFORZADA: Auto-repara URLs mal estructuradas e integra parámetros limpios
   const fetchReport = async (e) => {
     e.preventDefault();
     setError('');
     setReport(null);
     setLoading(true);
 
-    const baseURL = url.replace(/\/+$/, '');
+    let cleanURL = url.trim().replace(/\/+$/, '');
+    
+    // Si olvidaste poner ".onrender.com", el sistema lo auto-completa por ti
+    if (cleanURL.includes('pos-equipo') && !cleanURL.includes('.onrender.com')) {
+      cleanURL = `${cleanURL}.onrender.com`;
+    }
+
     try {
-      const res = await fetch(`${baseURL}/api/eval?key=${encodeURIComponent(key)}`, {
+      const res = await fetch(`${cleanURL}/api/eval?key=${encodeURIComponent(key.trim())}`, {
         method: 'GET'
       });
       
@@ -134,7 +140,7 @@ export default function EvalPage() {
               <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL del backend del equipo</label>
               <input
                 required
-                type="url"
+                type="text"
                 placeholder="https://pos-equipo4-backend.onrender.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
